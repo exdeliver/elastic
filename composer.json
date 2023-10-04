@@ -1,0 +1,37 @@
+{
+    "name": "exdeliver/elastic",
+    "description": ":package_description",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jason Hoendervanger",
+            "email": "renalpha@hotmail.com",
+            "homepage": "http://exdeliver.nl"
+        }
+    ],
+    "homepage": "https://github.com/exdeliver/elastic",
+    "keywords": [
+        "Laravel",
+        "ElasticSearch"
+    ],
+    "require": {
+        "elasticsearch/elasticsearch": "^8.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Exdeliver\\Elastic\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Exdeliver\\Elastic\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Exdeliver\\Elastic\\ElasticServiceProvider"
+            ]
+        }
+    }
+}
