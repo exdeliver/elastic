@@ -2,6 +2,7 @@
 
 namespace Exdeliver\Elastic\Resources;
 
+use App\Actions\EnvironmentChecker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -18,5 +19,18 @@ abstract class ElasticSearchResource extends JsonResource implements ElasticReso
     public static function builder(Model $model): Builder
     {
         return $model::query();
+    }
+
+    public static function environment(): string
+    {
+        if (EnvironmentChecker::is(['develop'])) {
+            return 'dev_';
+        }
+
+        if (EnvironmentChecker::is(['production'])) {
+            return '';
+        }
+
+        return 'test_';
     }
 }
