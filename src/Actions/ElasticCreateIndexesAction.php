@@ -13,7 +13,7 @@ final class ElasticCreateIndexesAction extends ElasticConnector
     {
         $data = [];
 
-        /** @var \App\Http\Resources\Elastic\ElasticResourceContract $index */
+        /** @var \Exdeliver\Elastic\Resources\ElasticResourceContract $index */
         foreach (self::indexes() as $index) {
             $indexName = $index::elastic()['index'];
             if ($this->client
