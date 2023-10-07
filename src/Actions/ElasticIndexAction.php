@@ -48,7 +48,7 @@ final class ElasticIndexAction extends ElasticConnector
         $filters = $this->request->get('filter', null);
         $mapping = $this->request->get('mapping', null);
 
-        $filters = Str::isJson($filters) ? json_decode($filters, true, 512, JSON_THROW_ON_ERROR) : [];
+        $filters = !is_array($filters) ? json_decode($filters, true, 512, JSON_THROW_ON_ERROR) : $filters;
 
         foreach ($filters as $column => $data) {
             if (empty($data)) {
