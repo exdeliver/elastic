@@ -35,7 +35,16 @@ class Elastic extends ElasticConnector
         return new self($index);
     }
 
-    public function where(string $field, $value, string $operator = '='): self
+    public function whereIn(string $field, array $values, string $operator = '='): self
+    {
+        foreach ($values as $value) {
+            $this->where($field, $value, $operator, 'should');
+        }
+
+        return $this;
+    }
+
+    public function where(string $field, $value, string $operator = '=', string $strict = 'must'): self
     {
         if (!in_array($operator, ['=', '>', '<', '>=', '<=', 'LIKE'], true)) {
             throw new InvalidArgumentException('Invalid operator');
@@ -44,15 +53,32 @@ class Elastic extends ElasticConnector
         $this->isFiltered = true;
 
         if ($operator === 'LIKE') {
-            $this->query['query']['bool']['must'][] = [
+            $this->query['query']['bool'][$strict][] = [
                 'wildcard' => [
                     $field => '*' . $value . '*',
                 ],
             ];
         } else {
-            $this->query['query']['match'] = [
-                $field => $value,
-            ];
+            $fieldArray = explode('.', $field);
+            $isNested = count($fieldArray) > 1;
+            if (!$isNested) {
+                $this->query['query']['bool'][$strict][] = [
+                    'match' => [
+                        $field => $value,
+                    ],
+                ];
+            } else {
+                $this->query['query']['bool'][$strict][] = [
+                    'nested' => [
+                        'path' => $fieldArray[0],
+                        'query' => [
+                            'match' => [
+                                $field => $value,
+                            ],
+                        ],
+                    ],
+                ];
+            }
         }
 
         return $this;

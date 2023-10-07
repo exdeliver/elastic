@@ -7,10 +7,11 @@ use Exdeliver\Elastic\Resources\ElasticResource;
 use Exdeliver\Elastic\Services\Elastic;
 use Http\Discovery\Exception\NotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 final class ElasticIndexAction extends ElasticConnector
 {
-    protected Request $request;
+    protected ?Request $request = null;
 
     protected string $resourceClass;
 
@@ -27,7 +28,7 @@ final class ElasticIndexAction extends ElasticConnector
             return $this->getResource($index, $uuid);
         }
 
-        return $this->getAll($index, 50, $this->request->integer('page', 1));
+        return $this->getAll($index, 50, $request->integer('page', 1));
     }
 
     private function indexExists(string $index): bool
@@ -42,7 +43,24 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
-        $data = Elastic::make($index)->get(['*'], $size, $page);
+        $elasticQuery = Elastic::make($index);
+
+        $filters = $this->request->get('filter', null);
+        $filters = Str::isJson($filters) ? json_decode($filters, true, 512, JSON_THROW_ON_ERROR) : [];
+
+        foreach ($filters as $column => $data) {
+            if (empty($data)) {
+                continue;
+            }
+
+            if (count(array_keys($data)) === 1) {
+                $elasticQuery = $elasticQuery->where($column, array_keys($data));
+            } else {
+                $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
+            }
+        }
+
+        $data = $elasticQuery->get(['*'], $size, $page);
 
         $paginatedResults = ElasticResource::paginate(
             $this->resourceClass,

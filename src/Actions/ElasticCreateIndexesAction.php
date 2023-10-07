@@ -25,15 +25,15 @@ final class ElasticCreateIndexesAction extends ElasticConnector
             }
             $data[] = $indexName;
 
-            $created = $this->client->indices()->create([
-                'index' => $indexName,
-                'client' => [
-                    'headers' => [
-                        'Content-Type' => 'application/json',
-                        'Accept' => 'application/json',
+            $created = $this->client->indices()->create(
+                $index::elastic() + [
+                    'client' => [
+                        'headers' => [
+                            'Content-Type' => 'application/json',
+                            'Accept' => 'application/json',
+                        ],
                     ],
-                ],
-            ])['index'];
+                ])['index'];
         }
 
         $data = collect($data);
