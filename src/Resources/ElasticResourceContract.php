@@ -14,5 +14,7 @@ interface ElasticResourceContract
 
     public static function elastic(): array;
 
+    public static function mapping(): array;
+
     public static function builder(Model $model): Builder;
 }

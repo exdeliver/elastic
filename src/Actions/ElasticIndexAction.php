@@ -46,6 +46,8 @@ final class ElasticIndexAction extends ElasticConnector
         $elasticQuery = Elastic::make($index);
 
         $filters = $this->request->get('filter', null);
+        $mapping = $this->request->get('mapping', null);
+
         $filters = Str::isJson($filters) ? json_decode($filters, true, 512, JSON_THROW_ON_ERROR) : [];
 
         foreach ($filters as $column => $data) {
@@ -53,8 +55,10 @@ final class ElasticIndexAction extends ElasticConnector
                 continue;
             }
 
+            $column = !empty($mapping) ? $mapping[$column] : $column;
+
             if (count(array_keys($data)) === 1) {
-                $elasticQuery = $elasticQuery->where($column, array_keys($data));
+                $elasticQuery = $elasticQuery->where($column, array_keys($data)[0]);
             } else {
                 $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
             }
