@@ -43,32 +43,26 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
+        $filters = $this->request->get('filter', []);
+        $mapping = $this->request->get('mapping', []);
+
         $elasticQuery = Elastic::make($index);
 
-        $filters = $this->request->get('filter', null);
-        $mapping = $this->request->get('mapping', null);
+        if (is_string($filters) && Str::isJson($filters)) {
+            $filters = json_decode($filters, true, 512, JSON_THROW_ON_ERROR);
+        }
 
-        if (!empty($filters)) {
-            try {
-                $filters = !is_array($filters) && Str::isJson($filters)
-                    ? json_decode($filters, true, 512, JSON_THROW_ON_ERROR)
-                    : $filters;
-            } catch (\JsonException $e) {
-                $filters = [];
+        foreach ($filters as $column => $data) {
+            if (empty($data)) {
+                continue;
             }
 
-            foreach ($filters as $column => $data) {
-                if (empty($data)) {
-                    continue;
-                }
+            $column = !empty($mapping) ? $mapping[$column] : $column;
 
-                $column = !empty($mapping) ? $mapping[$column] : $column;
-
-                if (count(array_keys($data)) === 1) {
-                    $elasticQuery = $elasticQuery->where($column, array_keys($data)[0]);
-                } else {
-                    $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
-                }
+            if (count(array_keys($data)) === 1) {
+                $elasticQuery = $elasticQuery->where($column, array_keys($data)[0]);
+            } else {
+                $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
             }
         }
 
