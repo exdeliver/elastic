@@ -3,6 +3,7 @@
 namespace Exdeliver\Elastic\Actions;
 
 use App\Http\Resources\AdvertisementResource;
+use App\Http\Resources\CountryResource;
 use App\Http\Resources\EventResource;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Illuminate\Http\Request;
@@ -47,6 +48,6 @@ final class ElasticCreateIndexesAction extends ElasticConnector
 
     public static function indexes(): array
     {
-        return [AdvertisementResource::class, EventResource::class];
+        return [CountryResource::class, AdvertisementResource::class, EventResource::class];
     }
 }
