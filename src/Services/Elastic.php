@@ -44,6 +44,23 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
+    public function whereGeoLocation(array $value): self
+    {
+        $this->isFiltered = true;
+
+        $this->query['query']['bool']['must'][] = [
+            'geo_distance' => [
+                'distance' => $value['distance'],
+                $value['column'] => [
+                    'lat' => $value['lat'],
+                    'lon' => $value['lon'],
+                ],
+            ],
+        ];
+
+        return $this;
+    }
+
     public function where(string $field, $value, string $operator = '=', string $strict = 'must'): self
     {
         if (!in_array($operator, ['=', '>', '<', '>=', '<=', 'LIKE'], true)) {

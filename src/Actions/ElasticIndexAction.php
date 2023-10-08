@@ -43,15 +43,19 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
+        $geoLocationType = $this->request->get('geolocation', false);
         $filters = $this->request->get('filter', []);
         $mapping = $this->request->get('mapping', []);
 
         $elasticQuery = Elastic::make($index);
 
+        if (!empty($geoLocationType)) {
+            $elasticQuery = $elasticQuery->whereGeoLocation($geoLocationType);
+        }
+
         if (is_string($filters) && Str::isJson($filters)) {
             $filters = json_decode($filters, true, 512, JSON_THROW_ON_ERROR);
         }
-
         foreach ($filters as $column => $data) {
             if (empty($data)) {
                 continue;
