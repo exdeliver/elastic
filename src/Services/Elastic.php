@@ -5,6 +5,7 @@ namespace Exdeliver\Elastic\Services;
 use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
+use http\Exception\InvalidArgumentException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class Elastic extends ElasticConnector
@@ -38,8 +39,33 @@ class Elastic extends ElasticConnector
     public function whereIn(string $field, array $values, string $operator = '='): self
     {
         foreach ($values as $value) {
-            $this->where($field, $value, $operator, 'should');
+            $type = $value['type'] ?? null;
+            if ($type === 'range') {
+                $this->whereRange($field, $value['gte'], $value['lt'], 'should');
+            } else {
+                $this->where($field, $value, $operator, 'should');
+            }
         }
+
+        return $this;
+    }
+
+    public function whereRange(string $field, mixed $gte, mixed $lt, string $type = 'filter'): self
+    {
+        if (!in_array($type, ['should', 'filter'], true)) {
+            throw new InvalidArgumentException(sprintf('Invalid argument %s', $type));
+        }
+
+        $this->isFiltered = true;
+
+        $this->query['query']['bool'][$type][] = [
+            'range' => [
+                $field => [
+                    'gte' => $gte,
+                    'lt' => $lt,
+                ],
+            ],
+        ];
 
         return $this;
     }

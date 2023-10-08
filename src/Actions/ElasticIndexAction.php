@@ -45,7 +45,7 @@ final class ElasticIndexAction extends ElasticConnector
     {
         $search = $this->request->get('search', null);
         $geoLocationType = $this->request->get('geolocation', []);
-        $filters = $this->request->get('filter', []);
+        $filters = $this->request->filter ?? [];
         $mapping = $this->request->get('mapping', []);
 
         $elasticQuery = Elastic::make($index);
@@ -54,20 +54,28 @@ final class ElasticIndexAction extends ElasticConnector
             $elasticQuery = $elasticQuery->whereGeoLocation($geoLocationType);
         }
 
-        if (is_string($filters) && Str::isJson($filters)) {
-            $filters = json_decode($filters, true, 512, JSON_THROW_ON_ERROR);
-        }
         foreach ($filters as $column => $data) {
-            if (empty($data)) {
+            $data = collect($data);
+
+            if ($data->isEmpty()) {
                 continue;
             }
 
             $column = !empty($mapping) ? $mapping[$column] : $column;
 
-            if (count(array_keys($data)) === 1) {
-                $elasticQuery = $elasticQuery->where($column, array_keys($data)[0]);
+            if ($data->count() === 1) {
+                if ($data->where('*.type.range')->isNotEmpty()) {
+                    $range = $data->firstWhere('*.type.range');
+                    $elasticQuery = $elasticQuery->whereRange($column, $range['gte'], $range['lt']);
+                } else {
+                    $elasticQuery = $elasticQuery->where($column, $data->keys()->all());
+                }
             } else {
-                $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
+                if ($data->where('*.type.range')->isNotEmpty()) {
+                    $elasticQuery = $elasticQuery->whereIn($column, $data->where('*.type.range')->all());
+                } else {
+                    $elasticQuery = $elasticQuery->whereIn($column, $data->keys()->all());
+                }
             }
         }
 
@@ -98,5 +106,21 @@ final class ElasticIndexAction extends ElasticConnector
         $data = Elastic::make($index)->where('uuid', $uuid)->first();
 
         return ElasticResource::make($data)->toArray($this->request);
+    }
+
+    private function prepareForValidation(): array
+    {
+        $filters = $this->request->filter ?? [];
+        if (is_string($filters) && Str::isJson($filters)) {
+            try {
+                $filters = json_decode($filters, true, 512, JSON_THROW_ON_ERROR);
+                $this->request->replace([
+                    'filter' => $filters,
+                ]);
+            } catch (\JsonException $e) {
+            }
+        }
+
+        return $this->request->all();
     }
 }
