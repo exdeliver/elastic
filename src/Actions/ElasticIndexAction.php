@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-                ->indices()
-                ->exists([
-                    'index' => $index,
-                ])
-                ->getStatusCode() === 200;
+            ->indices()
+            ->exists([
+                'index' => $index,
+            ])
+            ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -67,7 +67,7 @@ final class ElasticIndexAction extends ElasticConnector
                 if (empty($column)) {
                     continue;
                 }
-            } catch (Exception) {
+            } catch (Exception $exception) {
                 continue;
             }
 
@@ -76,7 +76,7 @@ final class ElasticIndexAction extends ElasticConnector
                     $range = $data->firstWhere('*.type.range');
                     $elasticQuery = $elasticQuery->whereRange($column, $range['gte'], $range['lt']);
                 } else {
-                    $elasticQuery = $elasticQuery->where($column, $data->keys()->all());
+                    $elasticQuery = $elasticQuery->where($column, $data->keys()->first());
                 }
             } else {
                 if ($data->where('*.type.range')->isNotEmpty()) {
@@ -89,7 +89,7 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn($column) => $mapping[$column])->toArray();
+                ->map(static fn ($column) => $mapping[$column])->toArray();
 
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
