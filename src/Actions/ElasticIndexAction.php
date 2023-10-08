@@ -43,7 +43,7 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
-        $geoLocationType = $this->request->get('geolocation', false);
+        $geoLocationType = $this->request->get('geolocation', []);
         $filters = $this->request->get('filter', []);
         $mapping = $this->request->get('mapping', []);
 
