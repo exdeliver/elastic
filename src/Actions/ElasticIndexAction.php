@@ -34,11 +34,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-            ->indices()
-            ->exists([
-                'index' => $index,
-            ])
-            ->getStatusCode() === 200;
+                ->indices()
+                ->exists([
+                    'index' => $index,
+                ])
+                ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -55,6 +55,10 @@ final class ElasticIndexAction extends ElasticConnector
         }
 
         foreach ($filters as $column => $data) {
+            if (is_null($column)) {
+                continue;
+            }
+
             $data = collect($data);
 
             if ($data->isEmpty()) {
@@ -81,7 +85,7 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn ($column) => $mapping[$column])->toArray();
+                ->map(static fn($column) => $mapping[$column])->toArray();
 
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
