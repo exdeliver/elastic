@@ -44,6 +44,27 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
+    public function whereSearch(string $text, array $columnsToSearch): self
+    {
+        $this->isFiltered = true;
+
+        $this->query['query']['bool']['must'][] = [
+            'multi_match' => [
+                'query' => $text,
+                'fields' => $columnsToSearch,
+                'fuzziness' => 'auto',
+            ],
+        ];
+
+        $sortColumns = collect($columnsToSearch)->map(static fn ($column) => [
+            $column . '.keyword' => 'asc',
+        ])->all();
+
+        $this->query['sort'] = $sortColumns;
+
+        return $this;
+    }
+
     public function whereGeoLocation(array $value): self
     {
         $this->isFiltered = true;

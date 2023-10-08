@@ -43,6 +43,7 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
+        $search = $this->request->get('search', null);
         $geoLocationType = $this->request->get('geolocation', []);
         $filters = $this->request->get('filter', []);
         $mapping = $this->request->get('mapping', []);
@@ -68,6 +69,13 @@ final class ElasticIndexAction extends ElasticConnector
             } else {
                 $elasticQuery = $elasticQuery->whereIn($column, array_keys($data));
             }
+        }
+
+        if (!empty($search)) {
+            $searchColumns = collect(explode(',', $search['columns']))
+                ->map(static fn ($column) => $mapping[$column])->toArray();
+
+            $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 
         $data = $elasticQuery->get(['*'], $size, $page);
