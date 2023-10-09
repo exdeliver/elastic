@@ -74,13 +74,13 @@ final class ElasticIndexAction extends ElasticConnector
             if ($data->count() === 1) {
                 if ($data->where('*.type.range')->isNotEmpty()) {
                     $range = $data->firstWhere('*.type.range');
-                    $elasticQuery = $elasticQuery->whereRange($column, $range['gte'], $range['lt']);
+                    $elasticQuery = $elasticQuery->whereRange($column, $range['gte'], $range['lt'], 'should');
                 } else {
                     $elasticQuery = $elasticQuery->where($column, $data->keys()->first());
                 }
             } else {
                 if ($data->where('*.type.range')->isNotEmpty()) {
-                    $elasticQuery = $elasticQuery->whereIn($column, $data->where('*.type.range')->all());
+                    $elasticQuery = $elasticQuery->whereIn($column, $data->where('*.type.range')->all(), 'should');
                 } else {
                     $elasticQuery = $elasticQuery->whereIn($column, $data->keys()->all());
                 }
