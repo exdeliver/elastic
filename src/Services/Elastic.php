@@ -82,7 +82,7 @@ class Elastic extends ElasticConnector
             ],
         ];
 
-        $sortColumns = collect($columnsToSearch)->map(static fn ($column) => [
+        $sortColumns = collect($columnsToSearch)->map(static fn($column) => [
             $column . '.keyword' => 'asc',
         ])->all();
 
@@ -91,14 +91,14 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
-    public function whereGeoLocation(array $value): self
+    public function whereGeoDistance(string $field, array $value): self
     {
         $this->isFiltered = true;
 
         $this->query['query']['bool']['must'][] = [
             'geo_distance' => [
                 'distance' => $value['distance'],
-                $value['column'] => [
+                $field => [
                     'lat' => $value['lat'],
                     'lon' => $value['lon'],
                 ],
@@ -253,7 +253,7 @@ class Elastic extends ElasticConnector
             'query' => $params,
             'size' => $size,
             'from' => $from,
-            'to' => (int) round($response['hits']['total']['value'] / $size),
+            'to' => (int)round($response['hits']['total']['value'] / $size),
             'page' => $page,
             'took' => $response['took'],
             'total' => $response['hits']['total']['value'],

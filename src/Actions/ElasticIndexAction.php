@@ -52,7 +52,7 @@ final class ElasticIndexAction extends ElasticConnector
         $elasticQuery = Elastic::make($index);
 
         if (!empty($geoLocationType)) {
-            $elasticQuery = $elasticQuery->whereGeoLocation($geoLocationType);
+            $elasticQuery = $elasticQuery->whereGeoDistance($geoLocationType);
         }
 
         foreach ($filters as $column => $query) {
@@ -82,6 +82,7 @@ final class ElasticIndexAction extends ElasticConnector
                 'whereDate' => $elasticQuery->whereDate($column, $value, $condition),
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value[0], $value[1]),
                 'where' => $elasticQuery->where($column, $value, $condition),
+                'whereGeoLocation' => $elasticQuery->whereGeoDistance($column, $value),
                 default => throw new BadQueryStringException(sprintf('You are missing type %s in query', ($type))),
             };
         }
