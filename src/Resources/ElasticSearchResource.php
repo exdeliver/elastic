@@ -33,9 +33,4 @@ abstract class ElasticSearchResource extends JsonResource implements ElasticReso
 
         return 'test_';
     }
-
-    public static function query(): array
-    {
-        return [];
-    }
 }

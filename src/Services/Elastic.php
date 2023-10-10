@@ -108,6 +108,21 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
+    public function whereDate(string $field, string $date, string $condition = 'gte'): self
+    {
+        $this->isFiltered = true;
+
+        $this->query['query']['bool']['should'][] = [
+            'range' => [
+                $field => [
+                    $condition => $date,
+                ],
+            ],
+        ];
+
+        return $this;
+    }
+
     public function where(string $field, $value, string $operator = '=', string $strict = 'must'): self
     {
         if (!in_array($operator, ['=', '>', '<', '>=', '<=', 'LIKE'], true)) {
@@ -271,27 +286,6 @@ class Elastic extends ElasticConnector
         $response = $this->client->delete($params);
 
         return $response['result'] === 'deleted';
-    }
-
-    public function whereDate(string $field, string $date, string $condition = 'gte'): self
-    {
-        $this->isFiltered = true;
-
-        $this->query['query']['bool']['should'][] = [
-            'range' => [
-                $field => [
-                    $condition => $date,
-                    'format' => 'yyyy-MM-dd',
-                ],
-            ],
-            [
-                'term' => [
-                    $field => $date,
-                ],
-            ],
-        ];
-
-        return $this;
     }
 
     public function whereDateBetween(string $field, string $from, string $to): self
