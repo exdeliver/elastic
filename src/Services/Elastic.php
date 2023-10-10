@@ -284,7 +284,11 @@ class Elastic extends ElasticConnector
                     'format' => 'yyyy-MM-dd',
                 ],
             ],
-            ['term'  => [$field => $date]],
+            [
+                'term' => [
+                    $field => $date,
+                ],
+            ],
         ];
 
         return $this;

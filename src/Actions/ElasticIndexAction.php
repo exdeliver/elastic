@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-                ->indices()
-                ->exists([
-                    'index' => $index,
-                ])
-                ->getStatusCode() === 200;
+            ->indices()
+            ->exists([
+                'index' => $index,
+            ])
+            ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -71,7 +71,13 @@ final class ElasticIndexAction extends ElasticConnector
             $type = $query['type'] ?? 'missing query type';
 
             match ($type) {
-                'whereRange' => $elasticQuery->whereRange($column, $value, $condition['lt'], $condition['gte'], 'should'),
+                'whereRange' => $elasticQuery->whereRange(
+                    $column,
+                    $value,
+                    $condition['lt'],
+                    $condition['gte'],
+                    'should'
+                ),
                 'whereIn' => $elasticQuery->whereIn($column, $value, $condition),
                 'whereDate' => $elasticQuery->whereDate($column, $value, $condition),
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value[0], $value[1]),
@@ -82,7 +88,7 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn($column) => $mapping[$column])->toArray();
+                ->map(static fn ($column) => $mapping[$column])->toArray();
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 
