@@ -45,15 +45,10 @@ final class ElasticIndexAction extends ElasticConnector
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
         $search = $this->request->search ?? null;
-        $geoLocationType = $this->request->geolocation ?? [];
         $filters = $this->request->filter ?? [];
         $mapping = $this->request->mapping ?? [];
 
         $elasticQuery = Elastic::make($index);
-
-        if (!empty($geoLocationType)) {
-            $elasticQuery = $elasticQuery->whereGeoDistance($geoLocationType);
-        }
 
         foreach ($filters as $column => $query) {
             if (empty($query)) {
