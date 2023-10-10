@@ -2,11 +2,11 @@
 
 namespace Exdeliver\Elastic\Actions;
 
-use Exception;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Exdeliver\Elastic\Resources\ElasticResource;
 use Exdeliver\Elastic\Services\Elastic;
 use Http\Discovery\Exception\NotFoundException;
+use http\Exception\BadQueryStringException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-            ->indices()
-            ->exists([
-                'index' => $index,
-            ])
-            ->getStatusCode() === 200;
+                ->indices()
+                ->exists([
+                    'index' => $index,
+                ])
+                ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -55,42 +55,34 @@ final class ElasticIndexAction extends ElasticConnector
             $elasticQuery = $elasticQuery->whereGeoLocation($geoLocationType);
         }
 
-        foreach ($filters as $column => $data) {
-            $data = collect($data);
-
-            if ($data->isEmpty()) {
+        foreach ($filters as $column => $query) {
+            if (empty($query)) {
                 continue;
             }
 
-            try {
-                $column = !empty($mapping) ? $mapping[$column] : $column;
-                if (empty($column)) {
-                    continue;
-                }
-            } catch (Exception $exception) {
+            $value = $query['value'] ?? null;
+            $column = !empty($mapping) ? $mapping[$column] : $column;
+
+            if (empty($value) || empty($column)) {
                 continue;
             }
 
-            if ($data->count() === 1) {
-                if ($data->where('*.type.range')->isNotEmpty()) {
-                    $range = $data->firstWhere('*.type.range');
-                    $elasticQuery = $elasticQuery->whereRange($column, $range['gte'], $range['lt'], 'should');
-                } else {
-                    $elasticQuery = $elasticQuery->where($column, $data->keys()->first());
-                }
-            } else {
-                if ($data->where('*.type.range')->isNotEmpty()) {
-                    $elasticQuery = $elasticQuery->whereIn($column, $data->where('*.type.range')->all(), 'should');
-                } else {
-                    $elasticQuery = $elasticQuery->whereIn($column, $data->keys()->all());
-                }
-            }
+            $condition = $query['condition'] ?? '=';
+            $type = $query['type'] ?? 'missing query type';
+
+            match ($type) {
+                'whereRange' => $elasticQuery->whereRange($column, $value, $condition['lt'], $condition['gte'], 'should'),
+                'whereIn' => $elasticQuery->whereIn($column, $value, $condition),
+                'whereDate' => $elasticQuery->whereDate($column, $value, $condition),
+                'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value[0], $value[1]),
+                'where' => $elasticQuery->where($column, $value, $condition),
+                default => throw new BadQueryStringException(sprintf('You are missing type %s in query', ($type))),
+            };
         }
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn ($column) => $mapping[$column])->toArray();
-
+                ->map(static fn($column) => $mapping[$column])->toArray();
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 

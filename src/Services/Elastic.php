@@ -186,7 +186,7 @@ class Elastic extends ElasticConnector
         return $response['_source'];
     }
 
-    public function first()
+    public function first(): array
     {
         $data = [];
         $params = [
@@ -271,6 +271,40 @@ class Elastic extends ElasticConnector
         $response = $this->client->delete($params);
 
         return $response['result'] === 'deleted';
+    }
+
+    public function whereDate(string $field, string $date, string $condition = 'gte'): self
+    {
+        $this->isFiltered = true;
+
+        $this->query['query']['bool']['should'][] = [
+            'range' => [
+                $field => [
+                    $condition => $date,
+                    'format' => 'yyyy-MM-dd',
+                ],
+            ],
+            ['term'  => [$field => $date]],
+        ];
+
+        return $this;
+    }
+
+    public function whereDateBetween(string $field, string $from, string $to): self
+    {
+        $this->isFiltered = true;
+
+        $this->query['query']['bool']['filter'][] = [
+            'range' => [
+                $field => [
+                    'gte' => $from,
+                    'lt' => $to,
+                    'format' => 'yyyy-MM-dd',
+                ],
+            ],
+        ];
+
+        return $this;
     }
 
     public function orderBy(string $field, string $direction = 'asc'): self
