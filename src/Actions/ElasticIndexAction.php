@@ -2,11 +2,11 @@
 
 namespace Exdeliver\Elastic\Actions;
 
+use Exception;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Exdeliver\Elastic\Resources\ElasticResource;
 use Exdeliver\Elastic\Services\Elastic;
 use Http\Discovery\Exception\NotFoundException;
-use http\Exception\BadQueryStringException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -46,6 +46,8 @@ final class ElasticIndexAction extends ElasticConnector
     {
         $search = $this->request->search ?? null;
         $filters = $this->request->filter ?? [];
+        $orderBy = $this->request->sort ?? null;
+        $orderDirection = $this->request->direction ?? 'asc';
         $mapping = $this->request->mapping ?? [];
 
         $elasticQuery = Elastic::make($index);
@@ -63,6 +65,7 @@ final class ElasticIndexAction extends ElasticConnector
             }
 
             $condition = $query['condition'] ?? '=';
+
             $type = $query['type'] ?? 'missing query type';
 
             match ($type) {
@@ -78,7 +81,7 @@ final class ElasticIndexAction extends ElasticConnector
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value[0], $value[1]),
                 'where' => $elasticQuery->where($column, $value, $condition),
                 'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
-                default => throw new BadQueryStringException(sprintf('You are missing type %s in query', ($type))),
+                default => throw new Exception(sprintf('You are missing type %s in query', $type)),
             };
         }
 
@@ -88,6 +91,9 @@ final class ElasticIndexAction extends ElasticConnector
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 
+        if (!empty($orderBy)) {
+            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection);
+        }
         $data = $elasticQuery->get(['*'], $size, $page);
 
         $paginatedResults = ElasticResource::paginate(
