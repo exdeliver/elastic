@@ -8,6 +8,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ElasticResource extends JsonResource
 {
+    public function toArray(Request $request): array
+    {
+        return parent::toArray($request);
+    }
+
     public static function paginate(
         string $resourceClass,
         array $resource,
@@ -19,17 +24,12 @@ class ElasticResource extends JsonResource
     ): LengthAwarePaginator {
         $collection = collect($resource)
             ->map(static fn($hit) => new $resourceClass($hit))
-            ->sortBy(fn($hit) => strtotime($hit['_source'][$order]));
+            ->sortBy(fn($hit) => strtotime($hit['_source'][$order] ?? null));
 
         $currentPage = $page;
 
         $paginator = new LengthAwarePaginator($collection, $total, $perPage, $currentPage);
 
         return $paginator->withPath(request()->path());
-    }
-
-    public function toArray(Request $request): array
-    {
-        return parent::toArray($request);
     }
 }

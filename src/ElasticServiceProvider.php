@@ -2,6 +2,7 @@
 
 namespace Exdeliver\Elastic;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
 
 class ElasticServiceProvider extends ServiceProvider
@@ -15,6 +16,29 @@ class ElasticServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->bootForConsole();
         }
+    }
+
+    /**
+     * Register any package services.
+     */
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__ . '/../config/elastic.php', 'elastic');
+
+        // Register the service the package provides.
+//        $this->app->singleton('backpack-maps', static function ($app) {
+//            return new BackpackMaps();
+//        });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return ['elastic'];
     }
 
     /**
@@ -44,28 +68,5 @@ class ElasticServiceProvider extends ServiceProvider
 
         // Registering package commands.
         // $this->commands([]);
-    }
-
-    /**
-     * Register any package services.
-     */
-    public function register(): void
-    {
-        $this->mergeConfigFrom(__DIR__ . '/../config/elastic.php', 'elastic');
-
-        // Register the service the package provides.
-        //        $this->app->singleton('backpack-maps', static function ($app) {
-        //            return new BackpackMaps();
-        //        });
-    }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return ['elastic'];
     }
 }
