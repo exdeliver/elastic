@@ -104,7 +104,9 @@ final class ElasticIndexAction extends ElasticConnector
             $data['data'],
             $data['total'],
             $data['page'],
-            $data['size']
+            $data['size'],
+            $orderBy,
+            $orderDirection,
         );
 
         return array_merge([
