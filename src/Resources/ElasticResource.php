@@ -19,8 +19,8 @@ class ElasticResource extends JsonResource
         int $total,
         int $page = 1,
         ?int $perPage = 10,
-        string $order = 'uuid',
-        string $direction = 'asc',
+        ?string $order = 'uuid',
+        ?string $direction = 'asc',
     ): LengthAwarePaginator {
         $collection = collect($resource)
             ->sortBy($order, $direction)
