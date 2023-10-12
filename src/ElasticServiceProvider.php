@@ -2,7 +2,6 @@
 
 namespace Exdeliver\Elastic;
 
-use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
 
 class ElasticServiceProvider extends ServiceProvider
