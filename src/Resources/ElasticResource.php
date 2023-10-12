@@ -23,7 +23,7 @@ class ElasticResource extends JsonResource
         ?string $direction = 'asc',
     ): LengthAwarePaginator {
         $collection = collect($resource)
-            ->sortBy($order, $direction)
+            ->sortBy($order, SORT_REGULAR, $direction === 'desc')
             ->map(static fn ($hit) => new $resourceClass($hit));
 
         $currentPage = $page;
