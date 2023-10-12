@@ -292,12 +292,11 @@ class Elastic extends ElasticConnector
     {
         $this->isFiltered = true;
 
-        $this->query['query']['bool']['filter'][] = [
+        $this->query['query']['bool']['should'][] = [
             'range' => [
                 $field => [
                     'gte' => $from,
                     'lt' => $to,
-                    'format' => 'yyyy-MM-dd',
                 ],
             ],
         ];
