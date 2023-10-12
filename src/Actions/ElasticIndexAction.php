@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-                ->indices()
-                ->exists([
-                    'index' => $index,
-                ])
-                ->getStatusCode() === 200;
+            ->indices()
+            ->exists([
+                'index' => $index,
+            ])
+            ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -68,6 +68,7 @@ final class ElasticIndexAction extends ElasticConnector
             $condition = $query['condition'] ?? '=';
 
             $type = $query['type'] ?? 'missing query type';
+            $strict = $query['strict'] ?? 'should';
 
             match ($type) {
                 'whereRange' => $elasticQuery->whereRange(
@@ -78,7 +79,7 @@ final class ElasticIndexAction extends ElasticConnector
                     'should'
                 ),
                 'whereIn' => $elasticQuery->whereIn($column, $value, $condition),
-                'whereDate' => $elasticQuery->whereDate($column, $value, $condition),
+                'whereDate' => $elasticQuery->whereDate($column, $value, $condition, $strict),
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lt']),
                 'where' => $elasticQuery->where($column, $value, $condition),
                 'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
@@ -88,13 +89,14 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn($column) => $mapping[$column])->toArray();
+                ->map(static fn ($column) => $mapping[$column])->toArray();
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 
         if (!empty($orderBy)) {
             $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection);
         }
+
         $data = $elasticQuery->get(['*'], $size, $page);
 
         $paginatedResults = ElasticResource::paginate(
@@ -107,6 +109,10 @@ final class ElasticIndexAction extends ElasticConnector
 
         return array_merge([
             'query' => $data['query'],
+            'order' => [
+                'columns' => $orderBy,
+                'direction' => $orderDirection,
+            ],
         ], (new ElasticResource($paginatedResults))->toArray($this->request));
     }
 

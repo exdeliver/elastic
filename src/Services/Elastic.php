@@ -108,11 +108,11 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
-    public function whereDate(string $field, string $date, string $condition = 'gte'): self
+    public function whereDate(string $field, string $date, string $condition = 'gte', string $strict = 'must'): self
     {
         $this->isFiltered = true;
 
-        $this->query['query']['bool']['should'][] = [
+        $this->query['query']['bool'][$strict][] = [
             'range' => [
                 $field => [
                     $condition => $date,
@@ -343,6 +343,7 @@ class Elastic extends ElasticConnector
         $this->query = [
             'match_all' => [],
         ];
+
         $this->join = null;
 
         return $this;
