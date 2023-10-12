@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-            ->indices()
-            ->exists([
-                'index' => $index,
-            ])
-            ->getStatusCode() === 200;
+                ->indices()
+                ->exists([
+                    'index' => $index,
+                ])
+                ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -58,6 +58,7 @@ final class ElasticIndexAction extends ElasticConnector
             }
 
             $value = $query['value'] ?? null;
+
             $column = !empty($mapping) ? $mapping[$column] : $column;
 
             if (empty($value) || empty($column)) {
@@ -78,7 +79,7 @@ final class ElasticIndexAction extends ElasticConnector
                 ),
                 'whereIn' => $elasticQuery->whereIn($column, $value, $condition),
                 'whereDate' => $elasticQuery->whereDate($column, $value, $condition),
-                'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lte']),
+                'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lt']),
                 'where' => $elasticQuery->where($column, $value, $condition),
                 'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
                 default => throw new Exception(sprintf('You are missing type %s in query', $type)),
@@ -87,7 +88,7 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn ($column) => $mapping[$column])->toArray();
+                ->map(static fn($column) => $mapping[$column])->toArray();
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
         }
 
