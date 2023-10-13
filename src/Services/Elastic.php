@@ -36,14 +36,14 @@ class Elastic extends ElasticConnector
         return new self($index);
     }
 
-    public function whereIn(string $field, array $values, string $operator = '='): self
+    public function whereIn(string $field, array $values, string $operator = '=', ?string $strict = 'should'): self
     {
         foreach ($values as $value) {
             $type = $value['type'] ?? null;
             if ($type === 'range') {
-                $this->whereRange($field, $value['gte'], $value['lt'], 'should');
+                $this->whereRange($field, $value['gte'], $value['lt'], $strict);
             } else {
-                $this->where($field, $value, $operator, 'should');
+                $this->where($field, $value, $operator, $strict);
             }
         }
 

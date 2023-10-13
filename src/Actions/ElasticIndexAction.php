@@ -78,10 +78,10 @@ final class ElasticIndexAction extends ElasticConnector
                     $condition['gte'],
                     'should'
                 ),
-                'whereIn' => $elasticQuery->whereIn($column, $value, $condition),
+                'whereIn' => $elasticQuery->whereIn($column, $value, $condition, $strict),
                 'whereDate' => $elasticQuery->whereDate($column, $value, $condition, $strict),
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lt']),
-                'where' => $elasticQuery->where($column, $value, $condition),
+                'where' => $elasticQuery->where($column, $value, $condition, $strict),
                 'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
                 default => throw new Exception(sprintf('You are missing type %s in query', $type)),
             };
