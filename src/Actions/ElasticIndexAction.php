@@ -69,6 +69,7 @@ final class ElasticIndexAction extends ElasticConnector
 
             $type = $query['type'] ?? 'missing query type';
             $strict = $query['strict'] ?? 'should';
+            $match = $query['exact'] ?? 'match';
 
             match ($type) {
                 'whereRange' => $elasticQuery->whereRange(
@@ -78,10 +79,10 @@ final class ElasticIndexAction extends ElasticConnector
                     $condition['gte'],
                     'should'
                 ),
-                'whereIn' => $elasticQuery->whereIn($column, $value, $condition, $strict),
+                'whereIn' => $elasticQuery->whereIn($column, $value, $condition, $strict, $match),
                 'whereDate' => $elasticQuery->whereDate($column, $value, $condition, $strict),
                 'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lt']),
-                'where' => $elasticQuery->where($column, $value, $condition, $strict),
+                'where' => $elasticQuery->where($column, $value, $condition, $strict, $match),
                 'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
                 default => throw new Exception(sprintf('You are missing type %s in query', $type)),
             };

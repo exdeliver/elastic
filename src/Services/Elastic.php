@@ -36,14 +36,19 @@ class Elastic extends ElasticConnector
         return new self($index);
     }
 
-    public function whereIn(string $field, array $values, string $operator = '=', ?string $strict = 'should'): self
-    {
+    public function whereIn(
+        string $field,
+        array $values,
+        string $operator = '=',
+        ?string $strict = 'should',
+        ?string $exact = 'match'
+    ): self {
         foreach ($values as $value) {
             $type = $value['type'] ?? null;
             if ($type === 'range') {
                 $this->whereRange($field, $value['gte'], $value['lt'], $strict);
             } else {
-                $this->where($field, $value, $operator, $strict);
+                $this->where($field, $value, $operator, $strict, $exact);
             }
         }
 
@@ -123,8 +128,13 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
-    public function where(string $field, $value, string $operator = '=', string $strict = 'must'): self
-    {
+    public function where(
+        string $field,
+        $value,
+        string $operator = '=',
+        ?string $strict = 'must',
+        ?string $exact = 'match'
+    ): self {
         if (!in_array($operator, ['=', '>', '<', '>=', '<=', 'LIKE'], true)) {
             throw new InvalidArgumentException('Invalid operator');
         }
@@ -142,7 +152,7 @@ class Elastic extends ElasticConnector
             $isNested = count($fieldArray) > 1;
             if (!$isNested) {
                 $this->query['query']['bool'][$strict][] = [
-                    'match' => [
+                    $exact => [
                         $field => $value,
                     ],
                 ];
@@ -151,7 +161,7 @@ class Elastic extends ElasticConnector
                     'nested' => [
                         'path' => $fieldArray[0],
                         'query' => [
-                            'match' => [
+                            $exact => [
                                 $field => $value,
                             ],
                         ],
