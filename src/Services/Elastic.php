@@ -259,6 +259,7 @@ class Elastic extends ElasticConnector
     public function get(array $fields = ['*'], ?int $size = 10, int $page = 1): array
     {
         $from = ($page - 1) * $size;
+
         $params = [
             'index' => $this->index,
             'size' => $size,
@@ -271,6 +272,10 @@ class Elastic extends ElasticConnector
             ],
             '_source' => $fields,
         ];
+
+        if (!empty($this->query['sort'])) {
+            $params['body']['sort'] = $this->query['sort'];
+        }
 
         $response = $this->client->search($params);
 
@@ -314,15 +319,16 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
-    public function orderBy(string $field, string $direction = 'asc'): self
+    public function orderBy(string $field, string $direction = 'asc', string $format = 'strict_date'): self
     {
         $sort = [
             $field => [
                 'order' => $direction,
+                'format' => $format,
             ],
         ];
 
-        $this->query['sort'] = $sort;
+        $this->query['sort'][] = $sort;
 
         return $this;
     }

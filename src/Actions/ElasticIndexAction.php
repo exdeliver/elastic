@@ -48,6 +48,7 @@ final class ElasticIndexAction extends ElasticConnector
         $filters = $this->request->filter ?? [];
         $orderBy = $this->request->sort ?? null;
         $orderDirection = $this->request->direction ?? 'asc';
+        $sortFormat = $this->request->sort_format ?? 'strict_date';
         $mapping = $this->request->mapping ?? [];
 
         $elasticQuery = Elastic::make($index);
@@ -95,7 +96,7 @@ final class ElasticIndexAction extends ElasticConnector
         }
 
         if (!empty($orderBy)) {
-            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection);
+            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection, $sortFormat);
         }
 
         $data = $elasticQuery->get(['*'], $size, $page);
