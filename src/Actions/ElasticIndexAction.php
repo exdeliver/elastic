@@ -35,11 +35,11 @@ final class ElasticIndexAction extends ElasticConnector
     private function indexExists(string $index): bool
     {
         return $this->client
-            ->indices()
-            ->exists([
-                'index' => $index,
-            ])
-            ->getStatusCode() === 200;
+                ->indices()
+                ->exists([
+                    'index' => $index,
+                ])
+                ->getStatusCode() === 200;
     }
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
@@ -50,6 +50,7 @@ final class ElasticIndexAction extends ElasticConnector
         $orderDirection = $this->request->direction ?? 'asc';
         $sortFormat = $this->request->sort_format ?? 'strict_date';
         $mapping = $this->request->mapping ?? [];
+        $randomize = (bool)($this->request->randomize ?? false);
 
         $elasticQuery = Elastic::make($index);
 
@@ -91,8 +92,12 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($search)) {
             $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn ($column) => $mapping[$column])->toArray();
+                ->map(static fn($column) => $mapping[$column])->toArray();
             $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
+        }
+
+        if ($randomize) {
+            $elasticQuery = $elasticQuery->randomize();
         }
 
         if (!empty($orderBy)) {
