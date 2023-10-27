@@ -36,7 +36,7 @@ final class ElasticStoreIndexAction extends ElasticConnector
 
                     $data[] = [
                         'index' => $resource['index'],
-                        'uuid' => $resource['body']['uuid'],
+                        'uuid' => $resource['body']['uuid'] ?? null,
                     ];
 
                     $this->client->index($resource);
