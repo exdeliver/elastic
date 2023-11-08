@@ -85,7 +85,7 @@ class Elastic extends ElasticConnector
             'multi_match' => [
                 'query' => $text,
                 'fields' => $columnsToSearch,
-                'fuzziness' => 'auto',
+                'fuzziness' => 1,
             ],
         ];
 
