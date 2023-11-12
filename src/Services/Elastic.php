@@ -334,7 +334,7 @@ class Elastic extends ElasticConnector
         string $format = 'plane'
     ): self {
         $sort = [
-            '_geo_distance' => [
+            'geo_distance' => [
                 $field => [
                     'lat' => $latitude,
                     'lon' => $longitude,
