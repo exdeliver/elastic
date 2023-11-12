@@ -331,7 +331,7 @@ class Elastic extends ElasticConnector
         string $latitude,
         string $longitude,
         string $direction = 'asc',
-        string $format = 'plane'
+        string $format = 'arc'
     ): self {
         $sort = [
             '_geo_distance' => [
@@ -341,7 +341,9 @@ class Elastic extends ElasticConnector
                 ],
                 'order' => $direction,
                 'unit' => 'km',
+                'mode' => 'min',
                 'distance_type' => $format,
+                'ignore_unmapped' => true,
             ],
         ];
 
