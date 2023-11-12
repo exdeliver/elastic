@@ -102,12 +102,12 @@ final class ElasticIndexAction extends ElasticConnector
             $elasticQuery = $elasticQuery->randomize();
         }
 
-        if (!empty($orderBy)) {
-            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection, $sortFormat);
-        }
-
         if (!empty($orderByGeo)) {
             $elasticQuery = $elasticQuery->orderByGeo($orderByGeo, $this->request->latitude, $this->request->longitude);
+        }
+
+        if (!empty($orderBy)) {
+            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection, $sortFormat);
         }
 
         $data = $elasticQuery->get(['*'], $size, $page);
