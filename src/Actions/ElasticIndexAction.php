@@ -47,6 +47,7 @@ final class ElasticIndexAction extends ElasticConnector
         $search = $this->request->search ?? null;
         $filters = $this->request->filter ?? [];
         $orderBy = $this->request->sort ?? null;
+        $orderByGeo = $this->request->sortgeo ?? null;
         $orderDirection = $this->request->direction ?? 'asc';
         $sortFormat = $this->request->sort_format ?? 'strict_date';
         $mapping = $this->request->mapping ?? [];
@@ -103,6 +104,10 @@ final class ElasticIndexAction extends ElasticConnector
 
         if (!empty($orderBy)) {
             $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection, $sortFormat);
+        }
+
+        if (!empty($orderByGeo)) {
+            $elasticQuery = $elasticQuery->orderByGeo($orderByGeo, $this->request->latitude, $this->request->longitude);
         }
 
         $data = $elasticQuery->get(['*'], $size, $page);

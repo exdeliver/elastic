@@ -24,6 +24,7 @@ final class ElasticStoreIndexAction extends ElasticConnector
         foreach ($resources as $resource) {
             /** @var \Illuminate\Database\Eloquent\Builder $model */
             $model = $resource::model()->query();
+
             $model->chunk(50, function ($chunkedCollection) use ($resource, &$data) {
                 $chunkedCollection->each(function ($row) use ($resource, &$data) {
                     $resource = $resource::make($row)->toElastic(request());

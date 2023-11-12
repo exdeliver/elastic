@@ -326,6 +326,30 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
+    public function orderByGeo(
+        string $field,
+        string $latitude,
+        string $longitude,
+        string $direction = 'asc',
+        string $format = 'plane'
+    ): self {
+        $sort = [
+            '_geo_distance' => [
+                $field => [
+                    'lat' => $latitude,
+                    'lon' => $longitude,
+                ],
+                'order' => $direction,
+                'unit' => 'km',
+                'distance_type' => $format,
+            ],
+        ];
+
+        $this->query['sort'][] = $sort;
+
+        return $this;
+    }
+
     public function orderBy(string $field, string $direction = 'asc', string $format = 'strict_date'): self
     {
         $sort = [
@@ -337,9 +361,9 @@ class Elastic extends ElasticConnector
 
         $this->query['sort'][] = $sort;
 
-//        if ($this->isRandomized) {
-//            $this->query['sort']['random_score'] = [];
-//        }
+        //        if ($this->isRandomized) {
+        //            $this->query['sort']['random_score'] = [];
+        //        }
 
         return $this;
     }
