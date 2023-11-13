@@ -330,7 +330,7 @@ class Elastic extends ElasticConnector
         string $field,
         string $latitude,
         string $longitude,
-        string $direction = 'asc',
+        string $direction = 'desc',
         string $format = 'arc'
     ): self {
         $sort = [
