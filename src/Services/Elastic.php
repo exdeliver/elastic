@@ -89,7 +89,7 @@ class Elastic extends ElasticConnector
         if (!empty($search['type']) && $search['type'] === 'suggest') {
             $params['type'] = 'bool_prefix';
         } else {
-            $params['fuzziness'] = 1;
+            $params['fuzziness'] = 'auto';
         }
 
         $this->query['query']['bool']['must'][] = [
