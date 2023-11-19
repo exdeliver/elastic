@@ -95,7 +95,7 @@ final class ElasticIndexAction extends ElasticConnector
             $searchColumns = collect(explode(',', $search['columns']))
                 ->map(static fn ($column) => $mapping[$column])->toArray();
 
-            $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns);
+            $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns, $search);
         }
 
         if ($randomize) {

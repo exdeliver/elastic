@@ -77,7 +77,33 @@ class Elastic extends ElasticConnector
         return $this;
     }
 
-    public function whereSearch(string $text, array $columnsToSearch): self
+    public function whereSearch(string $text, array $columnsToSearch, array $search): self
+    {
+        $this->isFiltered = true;
+
+        $params = [
+            'query' => $text,
+            'fields' => $columnsToSearch,
+        ];
+
+        if (!empty($search['type']) && $search['type'] === 'suggest') {
+            $params['type'] = 'bool_prefix';
+        } else {
+            $params['fuzziness'] = 1;
+        }
+
+        $this->query['query']['bool']['must'][] = [
+            'multi_match' => $params,
+        ];
+
+        $sortColumns = collect($columnsToSearch)->map(static fn($column) => [
+            $column . '.keyword' => 'asc',
+        ])->all();
+
+        return $this;
+    }
+
+    public function whereSuggest(string $text, array $columnsToSearch): self
     {
         $this->isFiltered = true;
 
@@ -85,13 +111,9 @@ class Elastic extends ElasticConnector
             'multi_match' => [
                 'query' => $text,
                 'fields' => $columnsToSearch,
-                'fuzziness' => 1,
+                'type' => 'bool_prefix',
             ],
         ];
-
-        $sortColumns = collect($columnsToSearch)->map(static fn ($column) => [
-            $column . '.keyword' => 'asc',
-        ])->all();
 
         return $this;
     }
@@ -283,7 +305,7 @@ class Elastic extends ElasticConnector
             'query' => $params,
             'size' => $size,
             'from' => $from,
-            'to' => (int) round($response['hits']['total']['value'] / $size),
+            'to' => (int)round($response['hits']['total']['value'] / $size),
             'page' => $page,
             'took' => $response['took'],
             'total' => $response['hits']['total']['value'],
