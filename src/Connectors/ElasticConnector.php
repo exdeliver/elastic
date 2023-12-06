@@ -7,11 +7,21 @@ use Elastic\Elasticsearch\ClientBuilder;
 
 class ElasticConnector
 {
-    protected Client $client;
+    public Client $client;
 
     public function __construct(?ClientBuilder $client = null)
     {
         $this->client = ($client ?? $this->clientBuilder())->build();
+    }
+
+    public function getClient(): Client
+    {
+        return $this->client;
+    }
+
+    public static function make(?ClientBuilder $client = null): ElasticConnector
+    {
+        return new self($client);
     }
 
     protected function clientBuilder(): ClientBuilder

@@ -2,11 +2,20 @@
 
 namespace Exdeliver\Elastic\Models;
 
+use Elastic\Elasticsearch\Client;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Searchable extends ElasticConnector
+class Searchable extends Model
 {
+    public ?Client $elastic = null;
+
+    public function elastic(): Client
+    {
+        return ElasticConnector::make()->getClient();
+    }
+
     public function indexSearchable()
     {
         $data = $this->toSearchableArray();
@@ -16,7 +25,7 @@ class Searchable extends ElasticConnector
             'body' => $data,
         ];
 
-        $this->client->index($params);
+        $this->elastic()->index($params);
     }
 
     public function updateSearchable()
@@ -30,7 +39,7 @@ class Searchable extends ElasticConnector
             ],
         ];
 
-        $this->client->update($params);
+        $this->elastic()->update($params);
     }
 
     public function deleteSearchable()
@@ -40,7 +49,7 @@ class Searchable extends ElasticConnector
             'id' => $this->getKey(),
         ];
 
-        $this->client->delete($params);
+        $this->elastic()->delete($params);
     }
 
     protected function toSearchableArray(): array
