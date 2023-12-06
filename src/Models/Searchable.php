@@ -11,12 +11,27 @@ class Searchable extends Model
 {
     public ?Client $elastic = null;
 
+    protected static function bootSearchable(): void
+    {
+        static::created(function ($model) {
+            $model->indexSearchable();
+        });
+
+        static::updated(function ($model) {
+            $model->updateSearchable();
+        });
+
+        static::deleted(function ($model) {
+            $model->deleteSearchable();
+        });
+    }
+
     public function elastic(): Client
     {
         return ElasticConnector::make()->getClient();
     }
 
-    public function indexSearchable()
+    public function indexSearchable(): void
     {
         $data = $this->toSearchableArray();
         $params = [
@@ -28,7 +43,7 @@ class Searchable extends Model
         $this->elastic()->index($params);
     }
 
-    public function updateSearchable()
+    public function updateSearchable(): void
     {
         $data = $this->toSearchableArray();
         $params = [
@@ -42,7 +57,7 @@ class Searchable extends Model
         $this->elastic()->update($params);
     }
 
-    public function deleteSearchable()
+    public function deleteSearchable(): void
     {
         $params = [
             'index' => $this->getSearchableIndex(),
