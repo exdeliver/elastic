@@ -74,6 +74,36 @@ class Searchable extends Model
 
     protected function getSearchableIndex(): string
     {
-        return Str::snake(class_basename($this));
+        return self::environment() . self::prefix() . Str::snake(class_basename($this));
+    }
+
+    public static function prefix(): string
+    {
+        if (empty(config('services.elastic.prefix'))) {
+            return '';
+        }
+
+        return config('services.elastic.prefix') . '_';
+    }
+
+    public static function environment(): string
+    {
+        if (app()->environment(['develop'])) {
+            return 'dev_';
+        }
+
+        if (app()->environment(['local'])) {
+            return 'local_';
+        }
+
+        if (app()->environment(['testing'])) {
+            return 'test_';
+        }
+
+        if (app()->environment(['production'])) {
+            return '';
+        }
+
+        return 'test_';
     }
 }
