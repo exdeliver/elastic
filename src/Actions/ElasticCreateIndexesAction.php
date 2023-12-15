@@ -45,6 +45,6 @@ final class ElasticCreateIndexesAction extends ElasticConnector
 
     public static function indexes(): array
     {
-        return config('database.connections.elasticsearch.indexes', []);
+        return config('elasticsearch.indexes', []);
     }
 }
