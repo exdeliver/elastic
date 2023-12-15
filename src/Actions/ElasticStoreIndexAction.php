@@ -37,10 +37,7 @@ final class ElasticStoreIndexAction extends ElasticConnector
                         throw new NotFoundException(sprintf('Index %s does not exists', $indexName));
                     }
 
-                    $data[] = [
-                        'index' => $indexName,
-                        'uuid' => $resource['body']['uuid'] ?? null,
-                    ];
+                    $resource['index'] = $indexName;
 
                     $this->client->index($resource);
                 });
