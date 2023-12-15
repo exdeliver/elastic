@@ -13,7 +13,8 @@ final class ElasticRemoveIndexesAction extends ElasticConnector
 
         /** @var \App\Http\Resources\Elastic\ElasticResourceContract $index */
         foreach (ElasticCreateIndexesAction::indexes() as $index) {
-            $indexName = $index::elastic()['index'];
+            $indexName = self::environment() . config('elastic.prefix') . '_' . $index::elastic()['index'];
+
             if ($this->client->indices()->exists([
                 'index' => $indexName,
             ])->getStatusCode() === 404) {

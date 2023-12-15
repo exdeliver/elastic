@@ -29,14 +29,16 @@ final class ElasticStoreIndexAction extends ElasticConnector
                 $chunkedCollection->each(function ($row) use ($resource, &$data) {
                     $resource = $resource::make($row)->toElastic(request());
 
+                    $indexName = self::environment() . config('elastic.prefix') . '_' . $resource['index'];
+
                     if (!$this->client->indices()->exists([
-                        'index' => $resource['index'],
+                        'index' => $indexName,
                     ])->getStatusCode() === 404) {
-                        throw new NotFoundException(sprintf('Index %s does not exists', $resource['index']));
+                        throw new NotFoundException(sprintf('Index %s does not exists', $indexName));
                     }
 
                     $data[] = [
-                        'index' => $resource['index'],
+                        'index' => $indexName,
                         'uuid' => $resource['body']['uuid'] ?? null,
                     ];
 

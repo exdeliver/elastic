@@ -1,6 +1,6 @@
 <?php
 
 return [
-    'prefix' => null,
+    'prefix' => env('ELASTICSEARCH_PREFIX'),
     'indexes' => [],
 ];

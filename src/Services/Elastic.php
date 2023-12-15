@@ -96,7 +96,7 @@ class Elastic extends ElasticConnector
             'multi_match' => $params,
         ];
 
-        $sortColumns = collect($columnsToSearch)->map(static fn($column) => [
+        $sortColumns = collect($columnsToSearch)->map(static fn ($column) => [
             $column . '.keyword' => 'asc',
         ])->all();
 
@@ -305,7 +305,7 @@ class Elastic extends ElasticConnector
             'query' => $params,
             'size' => $size,
             'from' => $from,
-            'to' => (int)round($response['hits']['total']['value'] / $size),
+            'to' => (int) round($response['hits']['total']['value'] / $size),
             'page' => $page,
             'took' => $response['took'],
             'total' => $response['hits']['total']['value'],

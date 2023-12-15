@@ -2,6 +2,7 @@
 
 namespace Exdeliver\Elastic\Connectors;
 
+use App\Actions\EnvironmentChecker;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
 
@@ -22,6 +23,19 @@ class ElasticConnector
     public static function make(?ClientBuilder $client = null): ElasticConnector
     {
         return new self($client);
+    }
+
+    public static function environment(): string
+    {
+        if (EnvironmentChecker::is(['develop'])) {
+            return 'dev_';
+        }
+
+        if (EnvironmentChecker::is(['production'])) {
+            return '';
+        }
+
+        return 'test_';
     }
 
     protected function clientBuilder(): ClientBuilder
