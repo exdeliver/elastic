@@ -14,17 +14,21 @@ final class ElasticCreateIndexesAction extends ElasticConnector
         /** @var \Exdeliver\Elastic\Resources\ElasticResourceContract $index */
         foreach (self::indexes() as $index) {
             $indexName = self::environment() . config('elastic.prefix') . '_' . $index::elastic()['index'];
+
+            $elasticData = $index::elastic();
+            $elasticData['index'] = $indexName;
+
             if ($this->client
-                ->indices()
-                ->exists([
-                    'index' => $indexName,
-                ])->getStatusCode() === 200) {
+                    ->indices()
+                    ->exists([
+                        'index' => $indexName,
+                    ])->getStatusCode() === 200) {
                 continue;
             }
             $data[] = $indexName;
 
             $created = $this->client->indices()->create(
-                $index::elastic() + [
+                $elasticData + [
                     'client' => [
                         'headers' => [
                             'Content-Type' => 'application/json',
