@@ -21,6 +21,8 @@ final class ElasticIndexAction extends ElasticConnector
         $this->request = $request;
         $this->resourceClass = $resourceClass;
 
+        $index = self::environment() . config('elastic.prefix') . '_' . $index;
+
         if (!$this->indexExists($index)) {
             throw new NotFoundException(sprintf('Index %s not found', $index));
         }
