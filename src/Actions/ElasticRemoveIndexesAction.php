@@ -11,7 +11,7 @@ final class ElasticRemoveIndexesAction extends ElasticConnector
     {
         $data = [];
 
-        /** @var \App\Http\Resources\Elastic\ElasticResourceContract $index */
+        /** @var \Exdeliver\Elastic\Resources\ElasticResourceContract $index */
         foreach (ElasticCreateIndexesAction::indexes() as $index) {
             $indexName = self::environment() . config('elastic.prefix') . '_' . $index::elastic()['index'];
 
