@@ -8,7 +8,7 @@ use Exdeliver\Elastic\Connectors\ElasticConnector;
 use http\Exception\InvalidArgumentException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class Elastic extends ElasticConnector
+class Elastic
 {
     protected string $index;
 
@@ -22,11 +22,11 @@ class Elastic extends ElasticConnector
 
     private bool $isRandomized = false;
 
-    public function __construct(string $index, ?ClientBuilder $client = null)
+    public function __construct(string $index)
     {
         $this->index = $index;
 
-        parent::__construct();
+        $this->client = ElasticConnector::make()->getClient();
 
         $this->query = [
             'query' => [],
