@@ -41,13 +41,13 @@ class ElasticConnector
     protected function clientBuilder(): ClientBuilder
     {
         $clientBuilder = ClientBuilder::create()
-            ->setHosts([config('elasticsearch.url')])
+            ->setHosts([config('services.elasticsearch.url')])
             ->setSSLVerification(false);
 
-        if (config('elasticsearch.auth', false)) {
+        if (config('services.elasticsearch.auth', false)) {
             $clientBuilder->setBasicAuthentication(
-                config('elasticsearch.username'),
-                config('elasticsearch.password'),
+                config('services.elasticsearch.username'),
+                config('services.elasticsearch.password'),
             );
         }
 
