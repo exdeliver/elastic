@@ -2,9 +2,9 @@
 
 namespace Exdeliver\Elastic\Connectors;
 
-use App\Actions\EnvironmentChecker;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
+use Exdeliver\Elastic\Actions\EnvironmentChecker;
 
 class ElasticConnector
 {
