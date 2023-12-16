@@ -3,6 +3,7 @@
 namespace Exdeliver\Elastic\Resources;
 
 use Exdeliver\Elastic\Actions\EnvironmentChecker;
+use Exdeliver\Elastic\Models\CsvModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -16,8 +17,12 @@ abstract class ElasticSearchResource extends JsonResource implements ElasticReso
             ->toArray($request);
     }
 
-    public static function builder(Model $model): Builder
+    public static function builder(CsvModel|Model $model): CsvModel|Builder
     {
+        if ($model instanceof CsvModel) {
+            return $model;
+        }
+
         return $model::query();
     }
 
