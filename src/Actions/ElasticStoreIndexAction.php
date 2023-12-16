@@ -2,9 +2,11 @@
 
 namespace Exdeliver\Elastic\Actions;
 
+use Exdeliver\Elastic\Models\CsvModel;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Http\Discovery\Exception\NotFoundException;
 use Illuminate\Database\Eloquent\Model;
+use Mockery\Exception;
 
 final class ElasticStoreIndexAction extends ElasticConnector
 {
@@ -22,26 +24,25 @@ final class ElasticStoreIndexAction extends ElasticConnector
 
         /** @var \Illuminate\Http\Resources\Json\JsonResource $resource */
         foreach ($resources as $resource) {
-            /** @var \Illuminate\Database\Eloquent\Builder $model */
-            $model = $resource::model()->query();
+            if ($resource::model() instanceof Model) {
+                $model = $resource::model()->query();
+                $this->processData($model, $resource);
+            }
 
-            $model->chunk(50, function ($chunkedCollection) use ($resource, &$data) {
-                $chunkedCollection->each(function ($row) use ($resource, &$data) {
-                    $resource = $resource::make($row)->toElastic(request());
+            if ($resource::model() instanceof CsvModel) {
+                $indexName = self::environment() . config('elastic.prefix') . '_' . $resource::elastic()['index'];
 
-                    $indexName = self::environment() . config('elastic.prefix') . '_' . $resource['index'];
+                try {
+                    $model = $resource::model()->all();
+                    foreach ($model as $row) {
+                        $row = $row->toArray();
 
-                    if (!$this->client->indices()->exists([
-                        'index' => $indexName,
-                    ])->getStatusCode() === 404) {
-                        throw new NotFoundException(sprintf('Index %s does not exists', $indexName));
+                        $this->insert($indexName, ['body' => $row]);
                     }
-
-                    $resource['index'] = $indexName;
-
-                    $this->client->index($resource);
-                });
-            });
+                } catch (Exception $e) {
+                    throw new \Exception($e);
+                }
+            }
         }
 
         $data = collect($data);
@@ -50,5 +51,31 @@ final class ElasticStoreIndexAction extends ElasticConnector
             'total' => $data->count(),
             'data' => $data->toJson(),
         ];
+    }
+
+    private function processData($model, $resource)
+    {
+        $model->chunk(50, function ($chunkedCollection) use ($resource) {
+            $chunkedCollection->each(function ($row) use ($resource) {
+                $resource = $resource::make($row)->toElastic(request());
+
+                $indexName = self::environment() . config('elastic.prefix') . '_' . $resource['index'];
+
+                $this->insert($indexName, $resource);
+            });
+        });
+    }
+
+    private function insert(string $indexName, $resource)
+    {
+        if (!$this->client->indices()->exists([
+                'index' => $indexName,
+            ])->getStatusCode() === 404) {
+            throw new NotFoundException(sprintf('Index %s does not exists', $indexName));
+        }
+
+        $resource['index'] = $indexName;
+
+        $this->client->index($resource);
     }
 }
