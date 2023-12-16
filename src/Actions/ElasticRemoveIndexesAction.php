@@ -16,8 +16,8 @@ final class ElasticRemoveIndexesAction extends ElasticConnector
             $indexName = self::environment() . config('elastic.prefix') . '_' . $index::elastic()['index'];
 
             if ($this->client->indices()->exists([
-                    'index' => $indexName,
-                ])->getStatusCode() === 404) {
+                'index' => $indexName,
+            ])->getStatusCode() === 404) {
                 continue;
             }
 

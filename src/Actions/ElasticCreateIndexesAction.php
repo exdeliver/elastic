@@ -19,10 +19,10 @@ final class ElasticCreateIndexesAction extends ElasticConnector
             $elasticData['index'] = $indexName;
 
             if ($this->client
-                    ->indices()
-                    ->exists([
-                        'index' => $indexName,
-                    ])->getStatusCode() === 200) {
+                ->indices()
+                ->exists([
+                    'index' => $indexName,
+                ])->getStatusCode() === 200) {
                 continue;
             }
             $data[] = $indexName;

@@ -2,8 +2,8 @@
 
 namespace Exdeliver\Elastic\Actions;
 
-use Exdeliver\Elastic\Models\CsvModel;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
+use Exdeliver\Elastic\Models\CsvModel;
 use Http\Discovery\Exception\NotFoundException;
 use Illuminate\Database\Eloquent\Model;
 use Mockery\Exception;
@@ -37,7 +37,9 @@ final class ElasticStoreIndexAction extends ElasticConnector
                     foreach ($model as $row) {
                         $row = $row->toArray();
 
-                        $this->insert($indexName, ['body' => $row]);
+                        $this->insert($indexName, [
+                            'body' => $row,
+                        ]);
                     }
                 } catch (Exception $e) {
                     throw new \Exception($e);
@@ -69,8 +71,8 @@ final class ElasticStoreIndexAction extends ElasticConnector
     private function insert(string $indexName, $resource)
     {
         if (!$this->client->indices()->exists([
-                'index' => $indexName,
-            ])->getStatusCode() === 404) {
+            'index' => $indexName,
+        ])->getStatusCode() === 404) {
             throw new NotFoundException(sprintf('Index %s does not exists', $indexName));
         }
 

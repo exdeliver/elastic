@@ -2,7 +2,6 @@
 
 namespace Exdeliver\Elastic\Services;
 
-use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use http\Exception\InvalidArgumentException;
