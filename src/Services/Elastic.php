@@ -2,12 +2,12 @@
 
 namespace Exdeliver\Elastic\Services;
 
+use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
-use http\Exception\InvalidArgumentException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class Elastic
+class Elastic extends ElasticConnector
 {
     protected string $index;
 
@@ -19,13 +19,11 @@ class Elastic
 
     private bool $isFiltered = false;
 
-    private bool $isRandomized = false;
-
-    public function __construct(string $index)
+    public function __construct(string $index, ?ClientBuilder $client = null)
     {
         $this->index = $index;
 
-        $this->client = ElasticConnector::make()->getClient();
+        parent::__construct();
 
         $this->query = [
             'query' => [],
@@ -37,125 +35,8 @@ class Elastic
         return new self($index);
     }
 
-    public function whereIn(
-        string $field,
-        array $values,
-        string $operator = '=',
-        ?string $strict = 'should',
-        ?string $exact = 'match'
-    ): self {
-        foreach ($values as $value) {
-            $type = $value['type'] ?? null;
-            if ($type === 'range') {
-                $this->whereRange($field, $value['gte'], $value['lt'], $strict);
-            } else {
-                $this->where($field, $value, $operator, $strict, $exact);
-            }
-        }
-
-        return $this;
-    }
-
-    public function whereRange(string $field, mixed $gte, mixed $lt, string $type = 'filter'): self
+    public function where(string $field, $value, string $operator = '='): self
     {
-        if (!in_array($type, ['should', 'filter'], true)) {
-            throw new InvalidArgumentException(sprintf('Invalid argument %s', $type));
-        }
-
-        $this->isFiltered = true;
-
-        $this->query['query']['bool'][$type][] = [
-            'range' => [
-                $field => [
-                    'gte' => $gte,
-                    'lt' => $lt,
-                ],
-            ],
-        ];
-
-        return $this;
-    }
-
-    public function whereSearch(string $text, array $columnsToSearch, array $search): self
-    {
-        $this->isFiltered = true;
-
-        $params = [
-            'query' => $text,
-            'fields' => $columnsToSearch,
-        ];
-
-        if (!empty($search['type']) && $search['type'] === 'suggest') {
-            $params['type'] = 'bool_prefix';
-        } else {
-            $params['fuzziness'] = 'auto';
-        }
-
-        $this->query['query']['bool']['must'][] = [
-            'multi_match' => $params,
-        ];
-
-        $sortColumns = collect($columnsToSearch)->map(static fn ($column) => [
-            $column . '.keyword' => 'asc',
-        ])->all();
-
-        return $this;
-    }
-
-    public function whereSuggest(string $text, array $columnsToSearch): self
-    {
-        $this->isFiltered = true;
-
-        $this->query['query']['bool']['must'][] = [
-            'multi_match' => [
-                'query' => $text,
-                'fields' => $columnsToSearch,
-                'type' => 'bool_prefix',
-            ],
-        ];
-
-        return $this;
-    }
-
-    public function whereGeoDistance(string $field, array $value): self
-    {
-        $this->isFiltered = true;
-
-        $this->query['query']['bool']['must'][] = [
-            'geo_distance' => [
-                'distance' => $value['distance'],
-                $field => [
-                    'lat' => $value['lat'],
-                    'lon' => $value['lon'],
-                ],
-            ],
-        ];
-
-        return $this;
-    }
-
-    public function whereDate(string $field, string $date, string $condition = 'gte', string $strict = 'must'): self
-    {
-        $this->isFiltered = true;
-
-        $this->query['query']['bool'][$strict][] = [
-            'range' => [
-                $field => [
-                    $condition => $date,
-                ],
-            ],
-        ];
-
-        return $this;
-    }
-
-    public function where(
-        string $field,
-        $value,
-        string $operator = '=',
-        ?string $strict = 'must',
-        ?string $exact = 'match'
-    ): self {
         if (!in_array($operator, ['=', '>', '<', '>=', '<=', 'LIKE'], true)) {
             throw new InvalidArgumentException('Invalid operator');
         }
@@ -163,32 +44,15 @@ class Elastic
         $this->isFiltered = true;
 
         if ($operator === 'LIKE') {
-            $this->query['query']['bool'][$strict][] = [
+            $this->query['query']['bool']['must'][] = [
                 'wildcard' => [
                     $field => '*' . $value . '*',
                 ],
             ];
         } else {
-            $fieldArray = explode('.', $field);
-            $isNested = count($fieldArray) > 1;
-            if (!$isNested) {
-                $this->query['query']['bool'][$strict][] = [
-                    $exact => [
-                        $field => $value,
-                    ],
-                ];
-            } else {
-                $this->query['query']['bool'][$strict][] = [
-                    'nested' => [
-                        'path' => $fieldArray[0],
-                        'query' => [
-                            $exact => [
-                                $field => $value,
-                            ],
-                        ],
-                    ],
-                ];
-            }
+            $this->query['query']['match'] = [
+                $field => $value,
+            ];
         }
 
         return $this;
@@ -232,7 +96,7 @@ class Elastic
         return $response['_source'];
     }
 
-    public function first(): array
+    public function first()
     {
         $data = [];
         $params = [
@@ -280,7 +144,6 @@ class Elastic
     public function get(array $fields = ['*'], ?int $size = 10, int $page = 1): array
     {
         $from = ($page - 1) * $size;
-
         $params = [
             'index' => $this->index,
             'size' => $size,
@@ -293,10 +156,6 @@ class Elastic
             ],
             '_source' => $fields,
         ];
-
-        if (!empty($this->query['sort'])) {
-            $params['body']['sort'] = $this->query['sort'];
-        }
 
         $response = $this->client->search($params);
 
@@ -324,69 +183,15 @@ class Elastic
         return $response['result'] === 'deleted';
     }
 
-    public function whereDateBetween(string $field, string $from, string $to): self
-    {
-        $this->isFiltered = true;
-
-        $this->query['query']['bool']['should'][] = [
-            'range' => [
-                $field => [
-                    'gte' => $from,
-                    'lt' => $to,
-                ],
-            ],
-        ];
-
-        return $this;
-    }
-
-    public function randomize(): self
-    {
-        $this->isRandomized = true;
-
-        return $this;
-    }
-
-    public function orderByGeo(
-        string $field,
-        string $latitude,
-        string $longitude,
-        string $direction = 'asc',
-        string $format = 'arc'
-    ): self {
-        $sort = [
-            '_geo_distance' => [
-                $field => [
-                    'lat' => $latitude,
-                    'lon' => $longitude,
-                ],
-                'order' => $direction,
-                'unit' => 'km',
-                'mode' => 'min',
-                'distance_type' => $format,
-                'ignore_unmapped' => true,
-            ],
-        ];
-
-        $this->query['sort'][] = $sort;
-
-        return $this;
-    }
-
-    public function orderBy(string $field, string $direction = 'asc', string $format = 'strict_date'): self
+    public function orderBy(string $field, string $direction = 'asc'): self
     {
         $sort = [
             $field => [
                 'order' => $direction,
-                'format' => $format,
             ],
         ];
 
-        $this->query['sort'][] = $sort;
-
-        //        if ($this->isRandomized) {
-        //            $this->query['sort']['random_score'] = [];
-        //        }
+        $this->query['sort'] = $sort;
 
         return $this;
     }
@@ -417,7 +222,6 @@ class Elastic
         $this->query = [
             'match_all' => [],
         ];
-
         $this->join = null;
 
         return $this;

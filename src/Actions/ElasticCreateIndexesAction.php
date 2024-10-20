@@ -2,6 +2,8 @@
 
 namespace Exdeliver\Elastic\Actions;
 
+use App\Http\Resources\AdvertisementResource;
+use App\Http\Resources\EventResource;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Illuminate\Http\Request;
 
@@ -11,13 +13,9 @@ final class ElasticCreateIndexesAction extends ElasticConnector
     {
         $data = [];
 
-        /** @var \Exdeliver\Elastic\Resources\ElasticResourceContract $index */
+        /** @var \App\Http\Resources\Elastic\ElasticResourceContract $index */
         foreach (self::indexes() as $index) {
-            $indexName = self::environment() . config('elastic.prefix') . '_' . $index::elastic()['index'];
-
-            $elasticData = $index::elastic();
-            $elasticData['index'] = $indexName;
-
+            $indexName = $index::elastic()['index'];
             if ($this->client
                 ->indices()
                 ->exists([
@@ -27,15 +25,15 @@ final class ElasticCreateIndexesAction extends ElasticConnector
             }
             $data[] = $indexName;
 
-            $created = $this->client->indices()->create(
-                $elasticData + [
-                    'client' => [
-                        'headers' => [
-                            'Content-Type' => 'application/json',
-                            'Accept' => 'application/json',
-                        ],
+            $created = $this->client->indices()->create([
+                'index' => $indexName,
+                'client' => [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
                     ],
-                ])['index'];
+                ],
+            ])['index'];
         }
 
         $data = collect($data);
@@ -49,6 +47,6 @@ final class ElasticCreateIndexesAction extends ElasticConnector
 
     public static function indexes(): array
     {
-        return config('services.elasticsearch.indexes', []);
+        return [AdvertisementResource::class, EventResource::class];
     }
 }

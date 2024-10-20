@@ -2,17 +2,15 @@
 
 namespace Exdeliver\Elastic\Actions;
 
-use Exception;
 use Exdeliver\Elastic\Connectors\ElasticConnector;
 use Exdeliver\Elastic\Resources\ElasticResource;
 use Exdeliver\Elastic\Services\Elastic;
 use Http\Discovery\Exception\NotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 final class ElasticIndexAction extends ElasticConnector
 {
-    protected ?Request $request = null;
+    protected Request $request;
 
     protected string $resourceClass;
 
@@ -20,8 +18,6 @@ final class ElasticIndexAction extends ElasticConnector
     {
         $this->request = $request;
         $this->resourceClass = $resourceClass;
-
-        $index = self::environment() . config('elastic.prefix') . '_' . $index;
 
         if (!$this->indexExists($index)) {
             throw new NotFoundException(sprintf('Index %s not found', $index));
@@ -31,7 +27,7 @@ final class ElasticIndexAction extends ElasticConnector
             return $this->getResource($index, $uuid);
         }
 
-        return $this->getAll($index, 50, $request->integer('page', 1));
+        return $this->getAll($index, 50, $this->request->integer('page', 1));
     }
 
     private function indexExists(string $index): bool
@@ -46,90 +42,18 @@ final class ElasticIndexAction extends ElasticConnector
 
     private function getAll(string $index, int $size = 10, int $page = 1): array
     {
-        $search = $this->request->search ?? null;
-        $filters = $this->request->filter ?? [];
-        $orderBy = $this->request->sort ?? null;
-        $orderByGeo = $this->request->sortgeo ?? null;
-        $orderDirection = $this->request->direction ?? 'asc';
-        $sortFormat = $this->request->sort_format ?? 'strict_date';
-        $mapping = $this->request->mapping ?? [];
-        $randomize = (bool) ($this->request->randomize ?? false);
-
-        $elasticQuery = Elastic::make($index);
-
-        foreach ($filters as $column => $query) {
-            if (empty($query)) {
-                continue;
-            }
-
-            $value = $query['value'] ?? null;
-
-            $column = !empty($mapping) ? $mapping[$column] : $column;
-
-            if (empty($value) || empty($column)) {
-                continue;
-            }
-
-            $condition = $query['condition'] ?? '=';
-
-            $type = $query['type'] ?? 'missing query type';
-            $strict = $query['strict'] ?? 'should';
-            $match = $query['exact'] ?? 'match';
-
-            match ($type) {
-                'whereRange' => $elasticQuery->whereRange(
-                    $column,
-                    $value,
-                    $condition['lt'],
-                    $condition['gte'],
-                    'should'
-                ),
-                'whereIn' => $elasticQuery->whereIn($column, $value, $condition, $strict, $match),
-                'whereDate' => $elasticQuery->whereDate($column, $value, $condition, $strict),
-                'whereDateBetween' => $elasticQuery->whereDateBetween($column, $value['gte'], $value['lt']),
-                'where' => $elasticQuery->where($column, $value, $condition, $strict, $match),
-                'whereGeoDistance' => $elasticQuery->whereGeoDistance($column, $value),
-                default => throw new Exception(sprintf('You are missing type %s in query', $type)),
-            };
-        }
-
-        if (!empty($search)) {
-            $searchColumns = collect(explode(',', $search['columns']))
-                ->map(static fn ($column) => $mapping[$column])->toArray();
-
-            $elasticQuery = $elasticQuery->whereSearch($search['term'], $searchColumns, $search);
-        }
-
-        if ($randomize) {
-            $elasticQuery = $elasticQuery->randomize();
-        }
-
-        if (!empty($orderByGeo)) {
-            $elasticQuery = $elasticQuery->orderByGeo($orderByGeo, $this->request->latitude, $this->request->longitude);
-        }
-
-        if (!empty($orderBy)) {
-            $elasticQuery = $elasticQuery->orderBy($orderBy, $orderDirection, $sortFormat);
-        }
-
-        $data = $elasticQuery->get(['*'], $size, $page);
+        $data = Elastic::make($index)->get(['*'], $size, $page);
 
         $paginatedResults = ElasticResource::paginate(
             $this->resourceClass,
             $data['data'],
             $data['total'],
             $data['page'],
-            $data['size'],
-            $orderBy,
-            $orderDirection,
+            $data['size']
         );
 
         return array_merge([
             'query' => $data['query'],
-            'order' => [
-                'columns' => $orderBy,
-                'direction' => $orderDirection,
-            ],
         ], (new ElasticResource($paginatedResults))->toArray($this->request));
     }
 
@@ -138,21 +62,5 @@ final class ElasticIndexAction extends ElasticConnector
         $data = Elastic::make($index)->where('uuid', $uuid)->first();
 
         return ElasticResource::make($data)->toArray($this->request);
-    }
-
-    private function prepareForValidation(): array
-    {
-        $filters = $this->request->filter ?? [];
-        if (is_string($filters) && Str::isJson($filters)) {
-            try {
-                $filters = json_decode($filters, true, 512, JSON_THROW_ON_ERROR);
-                $this->request->replace([
-                    'filter' => $filters,
-                ]);
-            } catch (\JsonException $e) {
-            }
-        }
-
-        return $this->request->all();
     }
 }
