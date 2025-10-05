@@ -15,7 +15,7 @@
         "ElasticSearch"
     ],
     "require": {
-        "elasticsearch/elasticsearch": "^8.10"
+        "elasticsearch/elasticsearch": "^8.10 || ^7.0"
     },
     "autoload": {
         "psr-4": {
